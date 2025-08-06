@@ -1,6 +1,10 @@
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
+// Detect target browser from environment variable
+const targetBrowser = process.env.TARGET_BROWSER || 'chrome';
+console.log(`🎯 Building for ${targetBrowser}`);
+
 module.exports = {
   entry: {
     popup: './src/popup/index.tsx',
@@ -35,7 +39,19 @@ module.exports = {
   plugins: [
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'public', to: '.' },
+        // Copy all files from public except manifest files
+        { 
+          from: 'public', 
+          to: '.',
+          globOptions: {
+            ignore: ['**/manifest*.json']
+          }
+        },
+        // Copy the correct manifest based on target browser
+        {
+          from: targetBrowser === 'firefox' ? 'public/manifest-firefox.json' : 'public/manifest.json',
+          to: 'manifest.json'
+        }
       ],
     }),
   ],

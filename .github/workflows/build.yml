@@ -29,8 +29,11 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Build extension
-      run: npm run build
+    - name: Build extension for Chrome
+      run: npm run build:chrome
+      
+    - name: Build extension for Firefox
+      run: npm run build:firefox
       
     - name: Check build output
       run: |
@@ -71,36 +74,91 @@ jobs:
           fi
         done
       
-    - name: Verify build output
+    - name: Create Chrome extension package
       run: |
-        echo "📋 Verifying build output in dist directory..."
-        ls -la dist/
+        echo "📦 Creating Chrome extension package..."
+        # Build Chrome version
+        npm run build:chrome
         
-        # Ensure manifest.json exists
-        if [ ! -f "dist/manifest.json" ]; then
-          echo "❌ Error: manifest.json not found in dist directory"
+        # Create Chrome ZIP
+        mkdir -p packages
+        cd dist
+        zip -r ../packages/C-3PO-chrome.zip .
+        cd ..
+        
+        echo "✅ Chrome package created: packages/C-3PO-chrome.zip"
+        ls -la packages/C-3PO-chrome.zip
+        
+    - name: Create Firefox extension package  
+      run: |
+        echo "📦 Creating Firefox extension package..."
+        # Build Firefox version
+        npm run build:firefox
+        
+        # Create Firefox ZIP
+        cd dist
+        zip -r ../packages/C-3PO-firefox.zip .
+        cd ..
+        
+        echo "✅ Firefox package created: packages/C-3PO-firefox.zip"
+        ls -la packages/C-3PO-firefox.zip
+        
+    - name: Verify packages
+      run: |
+        echo "📋 Verifying extension packages..."
+        
+        # Verify Chrome package
+        echo "🔍 Chrome package contents:"
+        unzip -l packages/C-3PO-chrome.zip | head -20
+        
+        # Verify Firefox package  
+        echo "🔍 Firefox package contents:"
+        unzip -l packages/C-3PO-firefox.zip | head -20
+        
+        # Check that both have manifest.json at root
+        if unzip -l packages/C-3PO-chrome.zip | grep -q "manifest.json$"; then
+          echo "✅ Chrome: manifest.json at root level"
+        else
+          echo "❌ Chrome: manifest.json not at root level"
           exit 1
         fi
         
-        echo "✅ Build verification complete - ready for upload"
+        if unzip -l packages/C-3PO-firefox.zip | grep -q "manifest.json$"; then
+          echo "✅ Firefox: manifest.json at root level"  
+        else
+          echo "❌ Firefox: manifest.json not at root level"
+          exit 1
+        fi
         
-    - name: Upload extension as artifact
-      id: upload-extension
+    - name: Upload Chrome extension
+      id: upload-chrome
       uses: actions/upload-artifact@v4
       with:
-        name: C-3PO-extension-v${{ github.run_number }}
-        path: dist/
+        name: C-3PO-chrome-v${{ github.run_number }}
+        path: packages/C-3PO-chrome.zip
         retention-days: 30
-        compression-level: 6  # Default compression for directory
+        compression-level: 0  # No compression for ZIP files
         if-no-files-found: error
         overwrite: false
         
-    - name: Verify extension upload
+    - name: Upload Firefox extension
+      id: upload-firefox  
+      uses: actions/upload-artifact@v4
+      with:
+        name: C-3PO-firefox-v${{ github.run_number }}
+        path: packages/C-3PO-firefox.zip
+        retention-days: 30
+        compression-level: 0  # No compression for ZIP files
+        if-no-files-found: error
+        overwrite: false
+        
+    - name: Verify uploads
       run: |
-        echo "✅ Extension uploaded successfully!"
-        echo "📦 Artifact ID: ${{ steps.upload-extension.outputs.artifact-id }}"
-        echo "🔗 Download URL: ${{ steps.upload-extension.outputs.artifact-url }}"
-        echo "🔒 SHA-256: ${{ steps.upload-extension.outputs.artifact-digest }}"
+        echo "✅ Extensions uploaded successfully!"
+        echo "📦 Chrome Artifact ID: ${{ steps.upload-chrome.outputs.artifact-id }}"
+        echo "📦 Firefox Artifact ID: ${{ steps.upload-firefox.outputs.artifact-id }}"
+        echo "🔗 Chrome Download URL: ${{ steps.upload-chrome.outputs.artifact-url }}"
+        echo "🔗 Firefox Download URL: ${{ steps.upload-firefox.outputs.artifact-url }}"
         
     - name: Generate AI Changelog
       if: github.ref == 'refs/heads/main'
@@ -212,27 +270,34 @@ jobs:
         # Set output for next step
         echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
         
-    - name: Download extension for release
+    - name: Download Chrome extension for release
       if: github.ref == 'refs/heads/main'
       uses: actions/download-artifact@v4
       with:
-        name: C-3PO-extension-v${{ github.run_number }}
-        path: extension-files
+        name: C-3PO-chrome-v${{ github.run_number }}
+        path: release-files
         
-    - name: Create release ZIP
+    - name: Download Firefox extension for release
+      if: github.ref == 'refs/heads/main'
+      uses: actions/download-artifact@v4
+      with:
+        name: C-3PO-firefox-v${{ github.run_number }}
+        path: release-files
+        
+    - name: Verify release files
       if: github.ref == 'refs/heads/main'
       run: |
-        cd extension-files
-        zip -r ../C-3PO-extension.zip .
-        cd ..
-        echo "✅ Release ZIP created"
-        ls -la C-3PO-extension.zip
+        echo "📋 Release files prepared:"
+        ls -la release-files/
+        echo "✅ Both Chrome and Firefox extensions ready for release"
         
     - name: Create Release
       if: github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
       with:
-        files: C-3PO-extension.zip
+        files: |
+          release-files/C-3PO-chrome.zip
+          release-files/C-3PO-firefox.zip
         tag_name: ${{ steps.create_tag.outputs.new_version }}
         name: Release ${{ steps.create_tag.outputs.new_version }}
         body: |
@@ -248,11 +313,22 @@ jobs:
           - Secure API key storage with encryption
           
           ### 🚀 Installation
-          1. Download the `C-3PO-extension.zip` file from the Assets section above
-          2. Extract it to a folder on your computer
+          
+          **Choose your browser:**
+          
+          **🟢 For Chrome/Edge/Brave:**
+          1. Download the `C-3PO-chrome.zip` file from the Assets section above
+          2. Extract the ZIP file
           3. Open Chrome and go to `chrome://extensions/`
-          4. Enable "Developer mode" in the top right
+          4. Enable "Developer mode" (top right toggle)
           5. Click "Load unpacked" and select the extracted folder
+          
+          **🦊 For Firefox:**
+          1. Download the `C-3PO-firefox.zip` file from the Assets section above
+          2. Extract the ZIP file  
+          3. Open Firefox and go to `about:debugging`
+          4. Click "This Firefox" 
+          5. Click "Load Temporary Add-on..." and select the `manifest.json` file from the extracted folder
           
           ### ⚙️ Configuration
           - Open the extension and go to "AI Provider Settings"
