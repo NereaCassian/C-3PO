@@ -74,59 +74,58 @@ jobs:
           fi
         done
       
-    - name: Create Chrome extension package
+    - name: Build Chrome extension
       run: |
-        echo "📦 Creating Chrome extension package..."
-        # Build Chrome version
+        echo "📦 Building Chrome extension..."
         npm run build:chrome
         
-        # Create Chrome ZIP
-        mkdir -p packages
-        cd dist
-        zip -r ../packages/C-3PO-chrome.zip .
-        cd ..
+        # Copy Chrome build to separate directory
+        mkdir -p dist-chrome
+        cp -r dist/* dist-chrome/
         
-        echo "✅ Chrome package created: packages/C-3PO-chrome.zip"
-        ls -la packages/C-3PO-chrome.zip
+        echo "✅ Chrome build ready in dist-chrome/"
+        ls -la dist-chrome/
         
-    - name: Create Firefox extension package  
+    - name: Build Firefox extension  
       run: |
-        echo "📦 Creating Firefox extension package..."
-        # Build Firefox version
+        echo "📦 Building Firefox extension..."
         npm run build:firefox
         
-        # Create Firefox ZIP
-        cd dist
-        zip -r ../packages/C-3PO-firefox.zip .
-        cd ..
+        # Copy Firefox build to separate directory
+        mkdir -p dist-firefox
+        cp -r dist/* dist-firefox/
         
-        echo "✅ Firefox package created: packages/C-3PO-firefox.zip"
-        ls -la packages/C-3PO-firefox.zip
+        echo "✅ Firefox build ready in dist-firefox/"
+        ls -la dist-firefox/
         
-    - name: Verify packages
+    - name: Verify builds
       run: |
-        echo "📋 Verifying extension packages..."
+        echo "📋 Verifying extension builds..."
         
-        # Verify Chrome package
-        echo "🔍 Chrome package contents:"
-        unzip -l packages/C-3PO-chrome.zip | head -20
+        # Verify Chrome build
+        echo "🔍 Chrome build contents:"
+        ls -la dist-chrome/
         
-        # Verify Firefox package  
-        echo "🔍 Firefox package contents:"
-        unzip -l packages/C-3PO-firefox.zip | head -20
+        # Verify Firefox build  
+        echo "🔍 Firefox build contents:"
+        ls -la dist-firefox/
         
         # Check that both have manifest.json at root
-        if unzip -l packages/C-3PO-chrome.zip | grep -q "manifest.json$"; then
-          echo "✅ Chrome: manifest.json at root level"
+        if [ -f "dist-chrome/manifest.json" ]; then
+          echo "✅ Chrome: manifest.json found"
+          echo "Chrome manifest background:"
+          grep -A 3 '"background"' dist-chrome/manifest.json || true
         else
-          echo "❌ Chrome: manifest.json not at root level"
+          echo "❌ Chrome: manifest.json not found"
           exit 1
         fi
         
-        if unzip -l packages/C-3PO-firefox.zip | grep -q "manifest.json$"; then
-          echo "✅ Firefox: manifest.json at root level"  
+        if [ -f "dist-firefox/manifest.json" ]; then
+          echo "✅ Firefox: manifest.json found"
+          echo "Firefox manifest background:"
+          grep -A 3 '"background"' dist-firefox/manifest.json || true
         else
-          echo "❌ Firefox: manifest.json not at root level"
+          echo "❌ Firefox: manifest.json not found"
           exit 1
         fi
         
@@ -135,9 +134,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: C-3PO-chrome-v${{ github.run_number }}
-        path: packages/C-3PO-chrome.zip
+        path: dist-chrome/
         retention-days: 30
-        compression-level: 0  # No compression for ZIP files
+        compression-level: 6  # Default compression for directory
         if-no-files-found: error
         overwrite: false
         
@@ -146,9 +145,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: C-3PO-firefox-v${{ github.run_number }}
-        path: packages/C-3PO-firefox.zip
+        path: dist-firefox/
         retention-days: 30
-        compression-level: 0  # No compression for ZIP files
+        compression-level: 6  # Default compression for directory
         if-no-files-found: error
         overwrite: false
         
@@ -275,29 +274,47 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: C-3PO-chrome-v${{ github.run_number }}
-        path: release-files
+        path: release-chrome
         
     - name: Download Firefox extension for release
       if: github.ref == 'refs/heads/main'
       uses: actions/download-artifact@v4
       with:
         name: C-3PO-firefox-v${{ github.run_number }}
-        path: release-files
+        path: release-firefox
         
-    - name: Verify release files
+    - name: Create release ZIPs
       if: github.ref == 'refs/heads/main'
       run: |
-        echo "📋 Release files prepared:"
-        ls -la release-files/
-        echo "✅ Both Chrome and Firefox extensions ready for release"
+        echo "📦 Creating release ZIPs..."
+        
+        # Create Chrome ZIP for release
+        cd release-chrome
+        zip -r ../C-3PO-chrome.zip .
+        cd ..
+        
+        # Create Firefox ZIP for release  
+        cd release-firefox
+        zip -r ../C-3PO-firefox.zip .
+        cd ..
+        
+        echo "✅ Release ZIPs created:"
+        ls -la C-3PO-*.zip
+        
+        # Verify ZIP contents
+        echo "🔍 Chrome ZIP contents:"
+        unzip -l C-3PO-chrome.zip | head -10
+        
+        echo "🔍 Firefox ZIP contents:"  
+        unzip -l C-3PO-firefox.zip | head -10
         
     - name: Create Release
       if: github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          release-files/C-3PO-chrome.zip
-          release-files/C-3PO-firefox.zip
+          C-3PO-chrome.zip
+          C-3PO-firefox.zip
         tag_name: ${{ steps.create_tag.outputs.new_version }}
         name: Release ${{ steps.create_tag.outputs.new_version }}
         body: |
