@@ -242,7 +242,7 @@ This project uses an advanced AI-powered changelog generation system that automa
 ### 📊 Example Changelog
 
 ```markdown
-## C-3PO Translation Extension v1.2.0
+## C-3PO v1.2.0
 
 ### 🤖 AI-Generated Changelog
 

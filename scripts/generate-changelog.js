@@ -181,7 +181,7 @@ class AIChangelogGenerator {
     const breakingChanges = Object.values(commitGroups).reduce((sum, group) => sum + group.breaking.length, 0);
     const securityFixes = Object.values(commitGroups).reduce((sum, group) => sum + group.security.length, 0);
     
-    let changelog = `## C-3PO Translation Extension ${newVersion}\n\n`;
+    let changelog = `## C-3PO ${newVersion}\n\n`;
     changelog += `### 🤖 AI-Generated Changelog\n\n`;
     changelog += `**Release Type:** ${this.getReleaseType(newVersion, latestTag)} Release  \n`;
     changelog += `**Commits:** ${totalCommits}  \n`;

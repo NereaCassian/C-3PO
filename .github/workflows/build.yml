@@ -71,69 +71,36 @@ jobs:
           fi
         done
       
-    - name: Create extension ZIP
+    - name: Verify build output
       run: |
-        # Create a temporary directory for the extension
-        mkdir -p temp-extension
-        
-        # Copy built files from dist
-        if [ -d "dist" ]; then
-          cp -r dist/* temp-extension/
-          echo "✅ Copied dist files"
-        else
-          echo "❌ dist directory not found"
-          exit 1
-        fi
-        
-        # Copy public files (manifest.json, icons, etc.)
-        if [ -d "public" ]; then
-          cp -r public/* temp-extension/
-          echo "✅ Copied public files"
-        fi
-        
-        # Copy manifest.json if it exists in root
-        if [ -f "manifest.json" ]; then
-          cp manifest.json temp-extension/
-          echo "✅ Copied root manifest.json"
-        fi
-        
-        # Copy any other necessary files
-        if [ -f "README.md" ]; then
-          cp README.md temp-extension/
-          echo "✅ Copied README.md"
-        fi
+        echo "📋 Verifying build output in dist directory..."
+        ls -la dist/
         
         # Ensure manifest.json exists
-        if [ ! -f "temp-extension/manifest.json" ]; then
-          echo "❌ Error: manifest.json not found in build output"
-          ls -la temp-extension/
+        if [ ! -f "dist/manifest.json" ]; then
+          echo "❌ Error: manifest.json not found in dist directory"
           exit 1
         fi
         
-        # Create the ZIP file
-        cd temp-extension
-        zip -r ../C-3PO-extension.zip .
-        cd ..
+        echo "✅ Build verification complete - ready for upload"
         
-        # Clean up
-        rm -rf temp-extension
-        
-        # Verify ZIP was created
-        if [ ! -f "C-3PO-extension.zip" ]; then
-          echo "❌ Error: Failed to create ZIP file"
-          exit 1
-        fi
-        
-        echo "✅ Extension ZIP created successfully: C-3PO-extension.zip"
-        ls -la C-3PO-extension.zip
-        
-    - name: Upload extension ZIP
+    - name: Upload extension as artifact
+      id: upload-extension
       uses: actions/upload-artifact@v4
       with:
-        name: C-3PO-extension
-        path: C-3PO-extension.zip
+        name: C-3PO-extension-v${{ github.run_number }}
+        path: dist/
         retention-days: 30
-        compression-level: 0  # No compression to avoid nested ZIP
+        compression-level: 6  # Default compression for directory
+        if-no-files-found: error
+        overwrite: false
+        
+    - name: Verify extension upload
+      run: |
+        echo "✅ Extension uploaded successfully!"
+        echo "📦 Artifact ID: ${{ steps.upload-extension.outputs.artifact-id }}"
+        echo "🔗 Download URL: ${{ steps.upload-extension.outputs.artifact-url }}"
+        echo "🔒 SHA-256: ${{ steps.upload-extension.outputs.artifact-digest }}"
         
     - name: Generate AI Changelog
       if: github.ref == 'refs/heads/main'
@@ -245,6 +212,22 @@ jobs:
         # Set output for next step
         echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
         
+    - name: Download extension for release
+      if: github.ref == 'refs/heads/main'
+      uses: actions/download-artifact@v4
+      with:
+        name: C-3PO-extension-v${{ github.run_number }}
+        path: extension-files
+        
+    - name: Create release ZIP
+      if: github.ref == 'refs/heads/main'
+      run: |
+        cd extension-files
+        zip -r ../C-3PO-extension.zip .
+        cd ..
+        echo "✅ Release ZIP created"
+        ls -la C-3PO-extension.zip
+        
     - name: Create Release
       if: github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
@@ -253,7 +236,7 @@ jobs:
         tag_name: ${{ steps.create_tag.outputs.new_version }}
         name: Release ${{ steps.create_tag.outputs.new_version }}
         body: |
-          ## C-3PO Translation Extension ${{ steps.create_tag.outputs.new_version }}
+          ## C-3PO ${{ steps.create_tag.outputs.new_version }}
           
           ${{ steps.changelog.outputs.changelog }}
           
@@ -265,7 +248,7 @@ jobs:
           - Secure API key storage with encryption
           
           ### 🚀 Installation
-          1. Download the `C-3PO-extension.zip` file above
+          1. Download the `C-3PO-extension.zip` file from the Assets section above
           2. Extract it to a folder on your computer
           3. Open Chrome and go to `chrome://extensions/`
           4. Enable "Developer mode" in the top right

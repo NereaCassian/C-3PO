@@ -228,7 +228,7 @@ jobs:
         tag_name: ${{ steps.create_tag.outputs.new_version }}
         name: Release ${{ steps.create_tag.outputs.new_version }}
         body: |
-          ## C-3PO Translation Extension ${{ steps.create_tag.outputs.new_version }}
+          ## C-3PO ${{ steps.create_tag.outputs.new_version }}
           
           ${{ steps.changelog.outputs.changelog }}
           

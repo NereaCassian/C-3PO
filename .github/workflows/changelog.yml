@@ -99,7 +99,7 @@ jobs:
               tag: '${{ github.event.release.tag_name }}'
             });
             
-            const changelogContent = `## C-3PO Translation Extension ${{ github.event.release.tag_name }}
+            const changelogContent = `## C-3PO ${{ github.event.release.tag_name }}
             
             ${{ steps.changelog.outputs.changelog }}
             

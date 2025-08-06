@@ -452,7 +452,7 @@ export const Translator: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 min-w-0">
           <Languages className="w-5 h-5 flex-shrink-0" />
-          <h1 className="text-lg font-semibold truncate">AI Translator</h1>
+                          <h1 className="text-lg font-semibold truncate">C-3PO</h1>
         </div>
         <Button
           variant="ghost"
