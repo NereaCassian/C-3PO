@@ -4,7 +4,7 @@ A simple AI-powered translation browser extension that uses Google Gemini or Ope
 
 ## 🌟 Features
 
-- **AI-Powered Translation**: Uses Google Gemini or OpenAI for high-quality translations
+- **AI-Powered Translation**: Uses Google Gemini or OpenAI or any OpenAI API compatible provider (Ollama, Anthropic, OpenRouter) for high-quality translations
 - **Context Menu Integration**: Right-click to translate selected text instantly
 - **Dark Mode Support**: Beautiful dark theme for better user experience
 - **Custom Translation Options**: Configure language pairs and translation preferences
@@ -30,7 +30,7 @@ A simple AI-powered translation browser extension that uses Google Gemini or Ope
 3. **Configure AI Provider**
    - Click on the C-3PO extension icon
    - Go to "AI Provider Settings"
-   - Choose your preferred AI provider (Gemini or OpenAI)
+   - Choose your preferred AI provider
    - Enter your API key
    - Save the configuration
 
@@ -229,45 +229,5 @@ This project uses an advanced AI-powered changelog generation system that automa
 4. Click **Run workflow**
 5. Review generated changelog
 6. Release is created with AI-powered changelog
-
-#### Changelog Features
-- **Smart Analysis**: Analyzes commit messages, issues, and PRs
-- **Label Integration**: Uses GitHub labels for categorization
-- **Author Attribution**: Shows who contributed changes
-- **Compare Links**: Links to diff between versions
-- **Unreleased Section**: Tracks unreleased changes
-- **Breaking Changes**: Highlights breaking changes
-- **Security Fixes**: Special section for security updates
-
-### 📊 Example Changelog
-
-```markdown
-## C-3PO v1.2.0
-
-### 🤖 AI-Generated Changelog
-
-**Release Type:** Minor Release  
-**Commits:** 15  
-**Contributors:** 3  
-**Since:** v1.1.0
-
-### ✨ Enhancements
-- Add support for Google Gemini AI provider (#45) - @user1
-- Implement dark mode theme (#42) - @user2
-- Add custom translation options (#38) - @user3
-
-### 🐛 Bug Fixes
-- Fix text overflow in settings dialog (#41) - @user1
-- Resolve API key encryption issue (#39) - @user2
-
-### 📚 Documentation
-- Update README with installation guide (#40) - @user3
-
-### 👷 CI/CD
-- Add AI-powered changelog generation (#43) - @user1
-- Implement automated release workflow (#44) - @user2
-```
-
----
 
 **May the translations be with you!** 🌍✨
