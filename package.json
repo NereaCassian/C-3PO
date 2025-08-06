@@ -10,9 +10,9 @@
     "prebuild": "npm run clean",
     "changelog": "node scripts/generate-changelog.js",
     "changelog:version": "node scripts/generate-changelog.js",
-    "version:patch": "npm run changelog:version v$(node -p \"require('./package.json').version.replace(/(\\d+)\\.(\\d+)\\.(\\d+)/, '\$1.\$2.' + (parseInt(\$3) + 1))\")",
-    "version:minor": "npm run changelog:version v$(node -p \"require('./package.json').version.replace(/(\\d+)\\.(\\d+)\\.(\\d+)/, '\$1.' + (parseInt(\$2) + 1) + '.0')\")",
-    "version:major": "npm run changelog:version v$(node -p \"require('./package.json').version.replace(/(\\d+)\\.(\\d+)\\.(\\d+)/, (parseInt(\$1) + 1) + '.0.0')\")"
+    "version:patch": "node scripts/version-patch.js",
+    "version:minor": "node scripts/version-minor.js",
+    "version:major": "node scripts/version-major.js"
   },
   "dependencies": {
     "openai": "^4.67.3",
