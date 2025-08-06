@@ -168,6 +168,7 @@ jobs:
         ls -la C-3PO-extension.zip
         
     - name: Create Git Tag
+      id: create_tag
       run: |
         # Get the latest tag
         LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
@@ -224,10 +225,10 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: C-3PO-extension.zip
-        tag_name: ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
-        name: Release ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
+        tag_name: ${{ steps.create_tag.outputs.new_version }}
+        name: Release ${{ steps.create_tag.outputs.new_version }}
         body: |
-          ## C-3PO Translation Extension ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
+          ## C-3PO Translation Extension ${{ steps.create_tag.outputs.new_version }}
           
           ${{ steps.changelog.outputs.changelog }}
           
@@ -264,7 +265,7 @@ jobs:
           - [Documentation](https://github.com/NereaCassian/C-3PO#readme)
           
           ### 📊 Release Statistics
-          - **Version:** ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
+          - **Version:** ${{ steps.create_tag.outputs.new_version }}
           - **Previous Version:** ${{ steps.changelog.outputs.latestTag || 'v0.0.0' }}
           - **Release Type:** ${{ github.event.inputs.release_type }}
           

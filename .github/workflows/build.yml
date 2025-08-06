@@ -208,6 +208,7 @@ jobs:
           }
         
     - name: Create Git Tag
+      id: create_tag
       if: github.ref == 'refs/heads/main'
       run: |
         # Get the latest tag
@@ -248,10 +249,10 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: C-3PO-extension.zip
-        tag_name: ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
-        name: Release ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
+        tag_name: ${{ steps.create_tag.outputs.new_version }}
+        name: Release ${{ steps.create_tag.outputs.new_version }}
         body: |
-          ## C-3PO Translation Extension ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
+          ## C-3PO Translation Extension ${{ steps.create_tag.outputs.new_version }}
           
           ${{ steps.changelog.outputs.changelog }}
           
