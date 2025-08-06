@@ -133,6 +133,7 @@ jobs:
         name: C-3PO-extension
         path: C-3PO-extension.zip
         retention-days: 30
+        compression-level: 0  # No compression to avoid nested ZIP
         
     - name: Generate AI Changelog
       if: github.ref == 'refs/heads/main'
