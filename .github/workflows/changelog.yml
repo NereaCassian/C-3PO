@@ -1,0 +1,139 @@
+name: Generate Changelog
+
+on:
+  release:
+    types:
+      - created
+      - edited
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: "✏️ Generate AI-powered changelog"
+        uses: janheinrichmerker/action-github-changelog-generator@v2.3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          output: CHANGELOG.md
+          issues: true
+          pullRequests: true
+          issuesWoLabels: true
+          prWoLabels: true
+          author: true
+          compareLink: true
+          breakingLabels: "breaking,breaking-change"
+          enhancementLabels: "enhancement,feature,feat"
+          bugLabels: "bug,fix,hotfix"
+          securityLabels: "security,vulnerability"
+          deprecatedLabels: "deprecated"
+          removedLabels: "removed"
+          unreleased: true
+          unreleasedLabel: "Unreleased"
+          headerLabel: "🤖 AI-Generated Changelog"
+          configureSections: |
+            {
+              "sections": {
+                "Breaking": {
+                  "prefix": "💥",
+                  "labels": ["breaking", "breaking-change"]
+                },
+                "Security": {
+                  "prefix": "🔒",
+                  "labels": ["security", "vulnerability"]
+                },
+                "Enhancements": {
+                  "prefix": "✨",
+                  "labels": ["enhancement", "feature", "feat"]
+                },
+                "Bug Fixes": {
+                  "prefix": "🐛",
+                  "labels": ["bug", "fix", "hotfix"]
+                },
+                "Documentation": {
+                  "prefix": "📚",
+                  "labels": ["documentation", "docs"]
+                },
+                "Style": {
+                  "prefix": "🎨",
+                  "labels": ["style", "ui", "design"]
+                },
+                "Refactoring": {
+                  "prefix": "♻️",
+                  "labels": ["refactor"]
+                },
+                "Performance": {
+                  "prefix": "⚡",
+                  "labels": ["performance", "perf"]
+                },
+                "Tests": {
+                  "prefix": "🧪",
+                  "labels": ["test", "testing"]
+                },
+                "CI/CD": {
+                  "prefix": "👷",
+                  "labels": ["ci", "cd", "workflow"]
+                },
+                "Build": {
+                  "prefix": "📦",
+                  "labels": ["build", "dependencies"]
+                }
+              }
+            }
+            
+      - name: "📝 Update release with changelog"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: release } = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: '${{ github.event.release.tag_name }}'
+            });
+            
+            const changelogContent = `## C-3PO Translation Extension ${{ github.event.release.tag_name }}
+            
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ### 🎉 Features
+            - AI-powered translation using Google Gemini or OpenAI
+            - Context menu integration for instant translations
+            - Dark mode support for better user experience
+            - Custom translation options and language pairs
+            - Secure API key storage with encryption
+            
+            ### 🚀 Installation
+            1. Download the \`C-3PO-extension.zip\` file above
+            2. Extract it to a folder on your computer
+            3. Open Chrome and go to \`chrome://extensions/\`
+            4. Enable "Developer mode" in the top right
+            5. Click "Load unpacked" and select the extracted folder
+            
+            ### ⚙️ Configuration
+            - Open the extension and go to "AI Provider Settings"
+            - Choose your preferred AI provider (Gemini or OpenAI)
+            - Enter your API key
+            - Customize context menu options as needed
+            - Save the configuration
+            
+            ### 🔗 Quick Links
+            - [GitHub Repository](https://github.com/NereaCassian/C-3PO)
+            - [Issues](https://github.com/NereaCassian/C-3PO/issues)
+            - [Documentation](https://github.com/NereaCassian/C-3PO#readme)
+            
+            ---
+            
+            **May the translations be with you!** 🌍✨`;
+            
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.id,
+              body: changelogContent
+            });
+            
+            console.log('✅ Release updated with AI-generated changelog'); 

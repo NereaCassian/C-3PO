@@ -1,0 +1,67 @@
+{
+  "name": "c-3po-translation-extension",
+  "version": "1.0.0",
+  "description": "A simple AI-powered translation browser extension",
+  "private": true,
+  "scripts": {
+    "dev": "webpack --mode development --watch",
+    "build": "webpack --mode production",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "changelog": "node scripts/generate-changelog.js",
+    "changelog:version": "node scripts/generate-changelog.js",
+    "version:patch": "npm run changelog:version v$(node -p \"require('./package.json').version.replace(/(\\d+)\\.(\\d+)\\.(\\d+)/, '\$1.\$2.' + (parseInt(\$3) + 1))\")",
+    "version:minor": "npm run changelog:version v$(node -p \"require('./package.json').version.replace(/(\\d+)\\.(\\d+)\\.(\\d+)/, '\$1.' + (parseInt(\$2) + 1) + '.0')\")",
+    "version:major": "npm run changelog:version v$(node -p \"require('./package.json').version.replace(/(\\d+)\\.(\\d+)\\.(\\d+)/, (parseInt(\$1) + 1) + '.0.0')\")"
+  },
+  "dependencies": {
+    "openai": "^4.67.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lucide-react": "^0.454.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^2.2.0",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "@radix-ui/react-switch": "^1.0.3",
+    "@radix-ui/react-label": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@types/node": "^20.10.4",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "ts-loader": "^9.5.1",
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^6.8.1",
+    "style-loader": "^3.3.3",
+    "postcss": "^8.4.32",
+    "postcss-loader": "^7.3.3",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.16",
+    "rimraf": "^5.0.5"
+  },
+  "keywords": [
+    "chrome-extension",
+    "translation",
+    "ai",
+    "gemini",
+    "openai",
+    "browser-extension",
+    "typescript",
+    "react"
+  ],
+  "author": "NereaCassian",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NereaCassian/C-3PO.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NereaCassian/C-3PO/issues"
+  },
+  "homepage": "https://github.com/NereaCassian/C-3PO#readme"
+}

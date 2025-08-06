@@ -1,0 +1,271 @@
+name: AI-Powered Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build extension
+      run: npm run build
+      
+    - name: Generate AI Changelog
+      id: changelog
+      uses: janheinrichmerker/action-github-changelog-generator@v2.3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        output: CHANGELOG.md
+        futureRelease: v${{ github.run_number }}
+        issues: true
+        pullRequests: true
+        issuesWoLabels: true
+        prWoLabels: true
+        author: true
+        compareLink: true
+        breakingLabels: "breaking,breaking-change"
+        enhancementLabels: "enhancement,feature,feat"
+        bugLabels: "bug,fix,hotfix"
+        securityLabels: "security,vulnerability"
+        deprecatedLabels: "deprecated"
+        removedLabels: "removed"
+        unreleased: true
+        unreleasedLabel: "Unreleased"
+        headerLabel: "🤖 AI-Generated Changelog"
+        configureSections: |
+          {
+            "sections": {
+              "Breaking": {
+                "prefix": "💥",
+                "labels": ["breaking", "breaking-change"]
+              },
+              "Security": {
+                "prefix": "🔒",
+                "labels": ["security", "vulnerability"]
+              },
+              "Enhancements": {
+                "prefix": "✨",
+                "labels": ["enhancement", "feature", "feat"]
+              },
+              "Bug Fixes": {
+                "prefix": "🐛",
+                "labels": ["bug", "fix", "hotfix"]
+              },
+              "Documentation": {
+                "prefix": "📚",
+                "labels": ["documentation", "docs"]
+              },
+              "Style": {
+                "prefix": "🎨",
+                "labels": ["style", "ui", "design"]
+              },
+              "Refactoring": {
+                "prefix": "♻️",
+                "labels": ["refactor"]
+              },
+              "Performance": {
+                "prefix": "⚡",
+                "labels": ["performance", "perf"]
+              },
+              "Tests": {
+                "prefix": "🧪",
+                "labels": ["test", "testing"]
+              },
+              "CI/CD": {
+                "prefix": "👷",
+                "labels": ["ci", "cd", "workflow"]
+              },
+              "Build": {
+                "prefix": "📦",
+                "labels": ["build", "dependencies"]
+              }
+            }
+          }
+        
+    - name: Create extension ZIP
+      run: |
+        # Create a temporary directory for the extension
+        mkdir -p temp-extension
+        
+        # Copy built files from dist
+        if [ -d "dist" ]; then
+          cp -r dist/* temp-extension/
+          echo "✅ Copied dist files"
+        else
+          echo "❌ dist directory not found"
+          exit 1
+        fi
+        
+        # Copy public files (manifest.json, icons, etc.)
+        if [ -d "public" ]; then
+          cp -r public/* temp-extension/
+          echo "✅ Copied public files"
+        fi
+        
+        # Copy manifest.json if it exists in root
+        if [ -f "manifest.json" ]; then
+          cp manifest.json temp-extension/
+          echo "✅ Copied root manifest.json"
+        fi
+        
+        # Copy any other necessary files
+        if [ -f "README.md" ]; then
+          cp README.md temp-extension/
+          echo "✅ Copied README.md"
+        fi
+        
+        # Ensure manifest.json exists
+        if [ ! -f "temp-extension/manifest.json" ]; then
+          echo "❌ Error: manifest.json not found in build output"
+          ls -la temp-extension/
+          exit 1
+        fi
+        
+        # Create the ZIP file
+        cd temp-extension
+        zip -r ../C-3PO-extension.zip .
+        cd ..
+        
+        # Clean up
+        rm -rf temp-extension
+        
+        # Verify ZIP was created
+        if [ ! -f "C-3PO-extension.zip" ]; then
+          echo "❌ Error: Failed to create ZIP file"
+          exit 1
+        fi
+        
+        echo "✅ Extension ZIP created successfully: C-3PO-extension.zip"
+        ls -la C-3PO-extension.zip
+        
+    - name: Create Git Tag
+      run: |
+        # Get the latest tag
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "Latest tag: $LATEST_TAG"
+        
+        # Extract version numbers
+        if [[ $LATEST_TAG =~ v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+          MAJOR=${BASH_REMATCH[1]}
+          MINOR=${BASH_REMATCH[2]}
+          PATCH=${BASH_REMATCH[3]}
+        else
+          MAJOR=0
+          MINOR=0
+          PATCH=0
+        fi
+        
+        # Determine new version based on release type
+        RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+        case $RELEASE_TYPE in
+          "major")
+            NEW_MAJOR=$((MAJOR + 1))
+            NEW_MINOR=0
+            NEW_PATCH=0
+            ;;
+          "minor")
+            NEW_MAJOR=$MAJOR
+            NEW_MINOR=$((MINOR + 1))
+            NEW_PATCH=0
+            ;;
+          "patch")
+            NEW_MAJOR=$MAJOR
+            NEW_MINOR=$MINOR
+            NEW_PATCH=$((PATCH + 1))
+            ;;
+        esac
+        
+        NEW_VERSION="v$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
+        echo "New version: $NEW_VERSION (${RELEASE_TYPE} release)"
+        
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Create and push tag
+        git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION - $RELEASE_TYPE release"
+        git push origin "$NEW_VERSION"
+        
+        echo "✅ Tag $NEW_VERSION created and pushed"
+        
+        # Set output for next step
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: C-3PO-extension.zip
+        tag_name: ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
+        name: Release ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
+        body: |
+          ## C-3PO Translation Extension ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
+          
+          ${{ steps.changelog.outputs.changelog }}
+          
+          ### 🎯 Release Highlights
+          
+          ${{ github.event.inputs.release_type == 'major' && '- 🚀 **Major Release**: Significant new features and improvements' || '' }}
+          ${{ github.event.inputs.release_type == 'minor' && '- ✨ **Minor Release**: New features and enhancements' || '' }}
+          ${{ github.event.inputs.release_type == 'patch' && '- 🔧 **Patch Release**: Bug fixes and improvements' || '' }}
+          
+          ### 🎉 Features
+          - AI-powered translation using Google Gemini or OpenAI
+          - Context menu integration for instant translations
+          - Dark mode support for better user experience
+          - Custom translation options and language pairs
+          - Secure API key storage with encryption
+          
+          ### 🚀 Installation
+          1. Download the `C-3PO-extension.zip` file above
+          2. Extract it to a folder on your computer
+          3. Open Chrome and go to `chrome://extensions/`
+          4. Enable "Developer mode" in the top right
+          5. Click "Load unpacked" and select the extracted folder
+          
+          ### ⚙️ Configuration
+          - Open the extension and go to "AI Provider Settings"
+          - Choose your preferred AI provider (Gemini or OpenAI)
+          - Enter your API key
+          - Customize context menu options as needed
+          - Save the configuration
+          
+          ### 🔗 Quick Links
+          - [GitHub Repository](https://github.com/NereaCassian/C-3PO)
+          - [Issues](https://github.com/NereaCassian/C-3PO/issues)
+          - [Documentation](https://github.com/NereaCassian/C-3PO#readme)
+          
+          ### 📊 Release Statistics
+          - **Version:** ${{ steps.changelog.outputs.new_version || steps.changelog.outputs.futureRelease }}
+          - **Previous Version:** ${{ steps.changelog.outputs.latestTag || 'v0.0.0' }}
+          - **Release Type:** ${{ github.event.inputs.release_type }}
+          
+          ---
+          
+          **May the translations be with you!** 🌍✨
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
