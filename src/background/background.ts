@@ -6,20 +6,37 @@ const SPANISH_TO_ENGLISH_ID = 'translate-spanish-to-english';
 
 // Initialize extension
 chrome.runtime.onInstalled.addListener(() => {
+  console.log('Extension installed, creating context menus...');
   createContextMenus();
   setDefaultSettings();
 });
 
+// Also create menus on startup (Firefox compatibility)
+chrome.runtime.onStartup.addListener(() => {
+  console.log('Extension startup, creating context menus...');
+  createContextMenus();
+});
+
 // Create context menus
 function createContextMenus() {
+  console.log('Creating context menus...');
+  
   // Remove existing menus
-  chrome.contextMenus.removeAll();
-
-  // Main translate menu
-  chrome.contextMenus.create({
-    id: CONTEXT_MENU_ID,
-    title: 'Translate with AI',
-    contexts: ['selection'],
+  chrome.contextMenus.removeAll(() => {
+    console.log('Removed all existing context menus');
+    
+    // Main translate menu
+    chrome.contextMenus.create({
+      id: CONTEXT_MENU_ID,
+      title: 'Translate with AI',
+      contexts: ['selection'],
+    }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('Error creating main context menu:', chrome.runtime.lastError);
+      } else {
+        console.log('Main context menu created successfully');
+      }
+    });
   });
 
   // Check if Spanish to English menu should be enabled and load custom menu items
@@ -29,6 +46,12 @@ function createContextMenus() {
         id: SPANISH_TO_ENGLISH_ID,
         title: 'Translate from Spanish to English',
         contexts: ['selection'],
+      }, () => {
+        if (chrome.runtime.lastError) {
+          console.error('Error creating Spanish to English context menu:', chrome.runtime.lastError);
+        } else {
+          console.log('Spanish to English context menu created successfully');
+        }
       });
     }
 
@@ -42,6 +65,12 @@ function createContextMenus() {
           id: item.id,
           title: `Translate from ${sourceName} to ${targetName}`,
           contexts: ['selection'],
+        }, () => {
+          if (chrome.runtime.lastError) {
+            console.error(`Error creating custom context menu ${item.id}:`, chrome.runtime.lastError);
+          } else {
+            console.log(`Custom context menu ${item.id} created successfully`);
+          }
         });
       }
     });
