@@ -9,6 +9,10 @@ on:
 jobs:
   changelog:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+      issues: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -136,4 +140,4 @@ jobs:
               body: changelogContent
             });
             
-            console.log('✅ Release updated with AI-generated changelog'); 
+            console.log('✅ Release updated with AI-generated changelog');

@@ -16,6 +16,10 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+      issues: read
     
     steps:
     - name: Checkout code
@@ -268,4 +272,4 @@ jobs:
           
           **May the translations be with you!** 🌍✨
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
